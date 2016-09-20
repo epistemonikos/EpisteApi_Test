@@ -1,5 +1,7 @@
 import requests
 import pprint
+from urllib import parse
+import click
 
 API = 'https://api.epistemonikos.org/v1'
 CREDENTIALS = {
@@ -23,6 +25,18 @@ def getinfo(document_id):
 
 
 if __name__ == '__main__':
-    id = input("ID: ")
+    tp = None
+
+    while tp != 0 and tp != 1:
+         tp = click.prompt("Epistemonikos ID(0) or DOI(1)?", type=int,
+                           default=0)
+
+    document_id = ''
+    if tp == 0:
+        document_id = click.prompt('Epistemonikos ID', type=str)
+    else:
+        tid = click.prompt('DOI', type=str)
+        document_id = parse.quote(tid, safe='')
+
     pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(getinfo(id))
+    pp.pprint(getinfo(document_id))
