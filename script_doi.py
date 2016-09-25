@@ -29,7 +29,7 @@ def printf(doi):
             global dictionary
             final_url = extract_domain(url)
             dictionary[final_url] = dictionary.get(final_url, 0)
-            dictionary[final_url] = dictionary[final_url] + 1
+            dictionary[final_url] += 1
         else:
             global url_false
             url_false += 1
