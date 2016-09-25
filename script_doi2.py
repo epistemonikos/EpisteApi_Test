@@ -95,7 +95,7 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
 
 def read_doi_tsv():
     dois = []
-    with open("episte_dois.tsv") as tsvfile:
+    with open("episte_dois.tsv", encoding='utf-8') as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
         for line in tsvreader:
             dois.append(line[1].strip())
@@ -119,7 +119,7 @@ def read_doi_tsv():
 
     info_struct1.join(info_struct2)
 
-    with open('results', 'w') as file:
+    with open('results', 'w', encoding='utf-8') as file:
         writer = csv.writer(file, dialect='excel-tab')
         for key, value in info_struct1.url_dict.items():
             writer.writerow([key, value])
