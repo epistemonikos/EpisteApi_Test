@@ -108,7 +108,7 @@ def read_doi_tsv():
     t1 = threading.Thread(target=analyze_doi_list, args=(half_1,
                                                          info_struct1, 1))
     t2 = threading.Thread(target=analyze_doi_list, args=(half_2,
-                                                         info_struct2, 2), )
+                                                         info_struct2, 2))
 
     t1.start()
     t2.start()
