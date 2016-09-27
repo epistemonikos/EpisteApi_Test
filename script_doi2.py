@@ -1,6 +1,9 @@
 # coding = utf-8
 import requests
-import re
+from requests.packages.urllib3.exceptions import ProtocolError, \
+    MaxRetryError, NewConnectionError, ConnectionError
+from socket import gaierror
+import tldextract
 import csv
 
 import threading
@@ -15,10 +18,12 @@ class InfoStruct:
         self.url_false = 0
         self.doi_true = 0
         self.doi_false = 0
+        self.domain_dois = {}
 
     def __repr__(self):
         return '''
         Urls: {dict}
+        Sample Dois: {samples}
         Valid URLs: {urlt}
         Invalid URLS: {urlf}
         Valid DOIs: {doit}
@@ -27,7 +32,8 @@ class InfoStruct:
                    urlt=self.url_true,
                    urlf=self.url_false,
                    doit=self.doi_true,
-                   doif=self.doi_false)
+                   doif=self.doi_false,
+                   samples=self.domain_dois)
 
     def __str__(self):
         return self.__repr__()
@@ -41,28 +47,36 @@ class InfoStruct:
         for k, v in struct.url_dict.items():
             self.url_dict[k] = self.url_dict.get(k, 0) + struct.url_dict[k]
 
+        for k, v in struct.domain_dois.items():
+            if k not in self.url_dict.keys():
+                self.url_dict[k] = v
+
 
 def extract_domain(url):
-    cut1 = re.search(r'//\S*?/', url).group(0)
-    cut1 = cut1[2:len(cut1) - 1]
-    cut1 = cut1.split('.')
-    l = len(cut1)
-    direction = cut1[l - 2] + '.' + cut1[l - 1]
-    return direction
+    e = tldextract.extract(url)
+    return "{domain}.{suffix}".format(domain=e.domain, suffix=e.suffix)
 
 
 def verify_doi(doi, info):
     doi_url = 'http://dx.doi.org/' + doi
     if doi and (not (doi == '')) and (doi[0] != '/'):
         info.doi_true += 1
-        r = requests.get(doi_url, allow_redirects=False)
-        url = r.headers.get('Location', None)
-        if url:
-            info.url_true += 1
-            final_url = extract_domain(url)
-            info.url_dict[final_url] = info.url_dict.get(final_url, 0) + 1
-        else:
-            info.url_false += 1
+        try:
+            r = requests.get(doi_url, allow_redirects=True)
+            # url = r.headers.get('Location', None)
+            url = r.url  # <- Returns last url in chain of redirects.
+            if url:
+                info.url_true += 1
+                final_url = extract_domain(url)
+                info.url_dict[final_url] = info.url_dict.get(final_url, 0) + 1
+                if final_url not in info.domain_dois.keys():
+                    info.domain_dois[final_url] = doi_url
+            else:
+                info.url_false += 1
+        except (ConnectionError, ProtocolError, MaxRetryError,
+                NewConnectionError, gaierror):
+            info.doi_false += 1
+
     else:
         info.doi_false += 1
 
@@ -83,7 +97,7 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
     for i, doi in enumerate(doi_list):
         verify_doi(doi, info_struct)
 
-        if i % 50 == 0:
+        if i % 1 == 0:
             print('Thread ' + str(thread_id))
             print('i: ' + str(i))
             print(info_struct)
@@ -100,29 +114,38 @@ def read_doi_tsv():
         for line in tsvreader:
             dois.append(line[1].strip())
 
-    half_1 = dois[:(int(len(dois) / 2))]
-    half_2 = dois[(int(len(dois) / 2)):]
+    n_threads = 7
+    split_len = len(dois) / n_threads
+    threads = []
+    info_structs = []
 
-    info_struct1 = InfoStruct()
-    info_struct2 = InfoStruct()
+    for i in range(0, n_threads):
+        init = int(split_len * i)
+        end = int(init + split_len)
+        split = dois[init:end]
+        info = InfoStruct()
+        t = threading.Thread(target=analyze_doi_list,
+                             args=(split, info, i + 1))
+        info_structs.append(info)
+        threads.append(t)
 
-    t1 = threading.Thread(target=analyze_doi_list, args=(half_1,
-                                                         info_struct1, 1))
-    t2 = threading.Thread(target=analyze_doi_list, args=(half_2,
-                                                         info_struct2, 2))
+        t.start()
 
-    t1.start()
-    t2.start()
+    for t in threads:
+        t.join()
 
-    t1.join()
-    t2.join()
+    final_info = InfoStruct()
+    for info in info_structs:
+        final_info.join(info)
 
-    info_struct1.join(info_struct2)
-
-    with open('results', 'w', encoding='utf-8') as file:
-        writer = csv.writer(file, dialect='excel-tab')
-        for key, value in info_struct1.url_dict.items():
-            writer.writerow([key, value])
+    with open('results', 'w', encoding='utf-8') as result_file, \
+            open('samples', 'w', encoding='utf-8') as sample_file:
+        writer = csv.writer(result_file, dialect='excel-tab')
+        writer2 = csv.writer(sample_file, dialect='excel-tab')
+        for domain, count in final_info.url_dict.items():
+            writer.writerow([domain, count])
+        for domain, doi in final_info.domain_dois.items():
+            writer2.writerow([domain, doi])
 
 
 if __name__ == '__main__':
