@@ -60,7 +60,7 @@ def verify_doi(doi, info):
     if doi and (not (doi == '')) and (doi[0] != '/'):
         info.doi_true += 1
         try:
-            r = requests.get(doi_url, allow_redirects=True)
+            r = requests.get(doi_url, allow_redirects=True, timeout=5)
             # url = r.headers.get('Location', None)
             url = r.url  # <- Returns last url in chain of redirects.
             if url:
