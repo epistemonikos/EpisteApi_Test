@@ -2,6 +2,7 @@
 import requests
 import tldextract
 import csv
+import traceback
 
 import threading
 import logging
@@ -89,22 +90,24 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
     handler.setFormatter(formatter)
 
     logger.addHandler(handler)
+    try:
+        for i, doi in enumerate(doi_list):
+            verify_doi(doi, info_struct)
 
-    for i, doi in enumerate(doi_list):
-        verify_doi(doi, info_struct)
+            if i % 1 == 0:
+                print('Thread ' + str(thread_id))
+                print('i: ' + str(i))
+                print(info_struct)
+                print()
 
-        if i % 1 == 0:
-            print('Thread ' + str(thread_id))
-            print('i: ' + str(i))
-            print(info_struct)
-            print()
+                logger.info('\nTotal: {tot}\nStruct: {struct}\n'.format(tot=i,
+                                                                        struct=info_struct))
 
-            logger.info('\nTotal: {tot}\nStruct: {struct}\n'.format(tot=i,
-                                                                    struct=info_struct))
-
-    print('Thread ' + str(thread_id))
-    print('Done!')
-    logger.info('\n * --- * Done * --- *')
+        print('Thread ' + str(thread_id))
+        print('Done!')
+        logger.info('\n * --- * Done * --- *')
+    except Exception:
+        logger.error(traceback.format_exc())
 
 
 def read_doi_tsv():
