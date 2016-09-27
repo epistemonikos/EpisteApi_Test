@@ -1,8 +1,5 @@
 # coding = utf-8
 import requests
-from requests.packages.urllib3.exceptions import ProtocolError, \
-    MaxRetryError, NewConnectionError, ConnectionError
-from socket import gaierror
 import tldextract
 import csv
 
@@ -73,8 +70,7 @@ def verify_doi(doi, info):
                     info.domain_dois[final_url] = doi_url
             else:
                 info.url_false += 1
-        except (ConnectionError, ProtocolError, MaxRetryError,
-                NewConnectionError, gaierror):
+        except Exception:
             info.doi_false += 1
 
     else:
