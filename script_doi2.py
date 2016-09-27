@@ -3,7 +3,7 @@ import requests
 import tldextract
 import csv
 import traceback
-
+import sys
 import threading
 import logging
 from logging.handlers import RotatingFileHandler
@@ -110,9 +110,9 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
         logger.error(traceback.format_exc())
 
 
-def read_doi_tsv():
+def read_doi_tsv(tsv_file):
     dois = []
-    with open("episte_dois.tsv", encoding='utf-8') as tsvfile:
+    with open(tsv_file, encoding='utf-8') as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
         for line in tsvreader:
             dois.append(line[1].strip())
@@ -152,4 +152,4 @@ def read_doi_tsv():
 
 
 if __name__ == '__main__':
-    read_doi_tsv()
+    read_doi_tsv(sys.argv[1])
