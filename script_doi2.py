@@ -102,6 +102,10 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
             logger.info('\nTotal: {tot}\nStruct: {struct}\n'.format(tot=i,
                                                                     struct=info_struct))
 
+    print('Thread ' + str(thread_id))
+    print('Done!')
+    logger.info('\n * --- * Done * --- *')
+
 
 def read_doi_tsv():
     dois = []
