@@ -94,7 +94,7 @@ def analyze_doi_list(doi_list, info_struct, thread_id):
         for i, doi in enumerate(doi_list):
             verify_doi(doi, info_struct)
 
-            if i % 1 == 0:
+            if i % 50 == 0:
                 print('Thread ' + str(thread_id))
                 print('i: ' + str(i))
                 print(info_struct)
